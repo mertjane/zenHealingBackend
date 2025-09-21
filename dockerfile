@@ -7,13 +7,16 @@ WORKDIR /app
 # Copy package files first (for better caching)
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install --production
+# Install dependencies (include devDependencies for TypeScript)
+RUN npm install
 
 # Copy the rest of your backend code
 COPY . .
 
-# Expose port (Render will map automatically)
+# Build TypeScript
+RUN npm run build
+
+# Expose port
 EXPOSE 5000
 
 # Start the backend
