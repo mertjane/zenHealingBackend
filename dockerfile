@@ -8,13 +8,16 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies (include devDependencies for TypeScript)
-RUN npm install
+RUN npm ci
 
 # Copy the rest of your backend code
 COPY . .
 
 # Build TypeScript
 RUN npm run build
+
+# Remove devDependencies to reduce image size
+RUN npm prune --production
 
 # Expose port
 EXPOSE 5000

@@ -34,8 +34,8 @@ app.use(cors({
     }
     
     // Allow mobile app schemes and capacitor/cordova
-    if (cleanOrigin.startsWith('capacitor://') || 
-        cleanOrigin.startsWith('ionic://') || 
+    if (cleanOrigin.startsWith('capacitor://') ||
+        cleanOrigin.startsWith('ionic://') ||
         cleanOrigin.startsWith('file://') ||
         cleanOrigin.startsWith('http://localhost') ||
         cleanOrigin.includes('capacitor') ||
@@ -60,8 +60,17 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
 
-// Handle preflight requests
-app.options('*', cors());
+// Handle preflight requests manually (safer than app.options('*'))
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    res.header('Access-Control-Allow-Origin', req.headers.origin);
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 app.use(express.json());
 
