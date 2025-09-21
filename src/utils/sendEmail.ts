@@ -1,8 +1,6 @@
 import dotenv from "dotenv";
-import fetch from "node-fetch";
 
 dotenv.config();
-
 
 export async function sendEmail(
   variables: Record<string, any>
