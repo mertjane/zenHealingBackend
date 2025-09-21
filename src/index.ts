@@ -10,22 +10,25 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 const allowedOrigins = [
-  process.env.CLIENT_URL,                     // https://www.zenhealing.co.uk
-  "https://031eb7e4.zenhealingweb.pages.dev" // optional staging URL
+  process.env.CLIENT_URL?.replace(/\/$/, ""),  // remove trailing slash
+  "https://031eb7e4.zenhealingweb.pages.dev"
 ];
 
 app.use(cors({
   origin: function(origin, callback) {
-    if (!origin) return callback(null, true); // allow non-browser requests like Postman
-    if (allowedOrigins.includes(origin)) {
+    if (!origin) return callback(null, true); // allow Postman / curl
+    const cleanOrigin = origin.replace(/\/$/, ""); // remove trailing slash
+    if (allowedOrigins.includes(cleanOrigin)) {
       return callback(null, true);
     } else {
+      console.log("Blocked CORS request from origin:", origin);
       return callback(new Error("CORS not allowed"));
     }
   },
-  methods: ["GET", "POST"],
+  methods: ["GET", "POST", "OPTIONS"],
   credentials: true
 }));
+
 app.use(express.json());
 
 // Routes
