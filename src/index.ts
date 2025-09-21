@@ -16,7 +16,7 @@ const allowedOrigins = [
   baseUrl?.replace('https://', 'https://www.'), // www version
   "https://zenhealing.co.uk",
   "https://www.zenhealing.co.uk", 
-  "https://031eb7e4.zenhealingweb.pages.dev"
+  "https://d9d423d8.zenhealingweb.pages.dev"
 ].filter(Boolean); // Remove any undefined values
 
 // Remove duplicates
@@ -95,6 +95,8 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   console.error('Error:', err.message);
   res.status(500).json({ error: 'Internal Server Error' });
 });
+
+
 
 // Start server
 app.listen(PORT, () => {
