@@ -12,29 +12,76 @@ const PORT = process.env.PORT || 5000;
 const allowedOrigins = [
   process.env.CLIENT_URL?.replace(/\/$/, ""),  // remove trailing slash
   "https://031eb7e4.zenhealingweb.pages.dev"
-];
+].filter(Boolean); // Remove any undefined values
 
 app.use(cors({
   origin: function(origin, callback) {
-    if (!origin) return callback(null, true); // allow Postman / curl
+    // Allow requests with no origin (mobile apps, Stripe webhooks, curl, Postman, etc.)
+    if (!origin) {
+      return callback(null, true);
+    }
+    
     const cleanOrigin = origin.replace(/\/$/, ""); // remove trailing slash
+    
+    // Check if origin is in allowed list
     if (allowedOrigins.includes(cleanOrigin)) {
       return callback(null, true);
-    } else {
-      console.log("Blocked CORS request from origin:", origin);
-      return callback(new Error("CORS not allowed"));
     }
+    
+    // Allow Stripe domains for mobile redirects
+    if (cleanOrigin.includes('stripe.com') || cleanOrigin.includes('js.stripe.com')) {
+      return callback(null, true);
+    }
+    
+    // Allow mobile app schemes and capacitor/cordova
+    if (cleanOrigin.startsWith('capacitor://') || 
+        cleanOrigin.startsWith('ionic://') || 
+        cleanOrigin.startsWith('file://') ||
+        cleanOrigin.startsWith('http://localhost') ||
+        cleanOrigin.includes('capacitor') ||
+        cleanOrigin === 'null') {
+      return callback(null, true);
+    }
+    
+    // For development: allow localhost on any port
+    if (process.env.NODE_ENV !== 'production' && cleanOrigin.includes('localhost')) {
+      return callback(null, true);
+    }
+    
+    console.log("Blocked CORS request from origin:", origin);
+    console.log("Allowed origins:", allowedOrigins);
+    
+    // Instead of throwing an error, return false to reject the request gracefully
+    return callback(null, false);
   },
-  methods: ["GET", "POST", "OPTIONS"],
-  credentials: true
+  methods: ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
+  credentials: true,
+  optionsSuccessStatus: 200, // Some legacy browsers choke on 204
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
 
+// Handle preflight requests
+app.options('*', cors());
+
 app.use(express.json());
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
 
 // Routes
 app.use("/api/stripe", stripeRoutes);
 
+// Error handling middleware
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Error:', err.message);
+  res.status(500).json({ error: 'Internal Server Error' });
+});
+
 // Start server
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Allowed origins:`, allowedOrigins);
 });
