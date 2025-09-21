@@ -8,11 +8,19 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+// Middleware - Handle both www and non-www versions
+const baseUrl = process.env.CLIENT_URL?.replace(/\/$/, ""); // remove trailing slash
 const allowedOrigins = [
-  process.env.CLIENT_URL?.replace(/\/$/, ""),  // remove trailing slash
+  baseUrl,
+  baseUrl?.replace('https://www.', 'https://'), // non-www version
+  baseUrl?.replace('https://', 'https://www.'), // www version
+  "https://zenhealing.co.uk",
+  "https://www.zenhealing.co.uk", 
   "https://031eb7e4.zenhealingweb.pages.dev"
 ].filter(Boolean); // Remove any undefined values
+
+// Remove duplicates
+const uniqueOrigins = [...new Set(allowedOrigins)];
 
 app.use(cors({
   origin: function(origin, callback) {
@@ -24,7 +32,7 @@ app.use(cors({
     const cleanOrigin = origin.replace(/\/$/, ""); // remove trailing slash
     
     // Check if origin is in allowed list
-    if (allowedOrigins.includes(cleanOrigin)) {
+    if (uniqueOrigins.includes(cleanOrigin)) {
       return callback(null, true);
     }
     
@@ -49,7 +57,7 @@ app.use(cors({
     }
     
     console.log("Blocked CORS request from origin:", origin);
-    console.log("Allowed origins:", allowedOrigins);
+    console.log("Allowed origins:", uniqueOrigins);
     
     // Instead of throwing an error, return false to reject the request gracefully
     return callback(null, false);
@@ -92,5 +100,5 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`Allowed origins:`, allowedOrigins);
+  console.log(`Allowed origins:`, uniqueOrigins);
 });
