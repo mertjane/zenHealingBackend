@@ -9,10 +9,22 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
+const allowedOrigins = [
+  process.env.CLIENT_URL,                     // https://www.zenhealing.co.uk
+  "https://031eb7e4.zenhealingweb.pages.dev" // optional staging URL
+];
+
 app.use(cors({
-  origin: process.env.CLIENT_URL,       // must exactly match your Cloudflare URL
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true); // allow non-browser requests like Postman
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error("CORS not allowed"));
+    }
+  },
   methods: ["GET", "POST"],
-  credentials: true           // if you send cookies, optional otherwise
+  credentials: true
 }));
 app.use(express.json());
 
