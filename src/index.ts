@@ -18,7 +18,7 @@ const allowedOrigins = [
   baseUrl?.replace('https://', 'https://www.'), // www version
   "https://zenhealing.co.uk",
   "https://www.zenhealing.co.uk", 
-  "https://c53813de.zenhealingweb.pages.dev"
+  "https://dd7e2cfa.zenhealingweb.pages.dev"
 ].filter(Boolean); // Remove any undefined values
 
 // Remove duplicates
