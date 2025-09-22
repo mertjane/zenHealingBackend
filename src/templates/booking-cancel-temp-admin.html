@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Booking Cancelled - Admin</title>
+    <style>
+      body { font-family: Arial, sans-serif; background-color: #f8f8f8; margin: 0; padding: 0; }
+      .container { width: 100%; max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+      .header { background-color: #5c6a55; color: #ffffff; text-align: center; padding: 20px; }
+      .body { padding: 20px; color: #333333; }
+      .footer { background-color: #eee6da; color: #5c6a55; text-align: center; padding: 15px; font-size: 12px; }
+      .highlight { color: #5c6a55; font-weight: bold; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Zen Healing</h1>
+      </div>
+      <div class="body">
+        <p>Booking cancelled by <span class="highlight">{{name}} {{surname}}</span></p>
+        <p>Booking details:</p>
+        <ul>
+          <li>Email: <span class="highlight">{{email}}</span></li>
+          <li>Session: <span class="highlight">{{session}}</span></li>
+          <li>Date: <span class="highlight">{{date}}</span></li>
+          <li>Time: <span class="highlight">{{time}}</span></li>
+        </ul>
+        <p>Please update your records accordingly.</p>
+      </div>
+      <div class="footer">
+        &copy; 2025 Zen Healing. All rights reserved.
+      </div>
+    </div>
+  </body>
+</html>

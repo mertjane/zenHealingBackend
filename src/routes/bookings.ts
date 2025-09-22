@@ -4,7 +4,7 @@ import path from "path";
 import { Booking } from "../types/Booking";
 
 const router = Router();
-const filePath = path.join(process.cwd(), "src", "db", "bookings.json");
+const filePath = path.join(process.cwd(), "db", "bookings.json");
 
 // Load bookings from file
 const loadBookings = (): Booking[] => {

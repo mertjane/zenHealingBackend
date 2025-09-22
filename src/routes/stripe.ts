@@ -1,8 +1,26 @@
 import express, { Router } from "express";
+import fs from "fs";
+import path from "path";
+import { Booking } from "../types/Booking";
 import Stripe from "stripe";
 import dotenv from "dotenv";
 import bodyParser from "body-parser";
 import { sendEmail } from "../utils/sendEmail"; // helper
+
+const filePath = path.join(process.cwd(), "db", "bookings.json");
+
+
+// Load bookings
+const loadBookings = (): Booking[] => {
+  if (!fs.existsSync(filePath)) return [];
+  const data = fs.readFileSync(filePath, "utf8");
+  return data ? JSON.parse(data) : [];
+};
+
+// Save bookings
+const saveBookings = (bookings: Booking[]) => {
+  fs.writeFileSync(filePath, JSON.stringify(bookings, null, 2), "utf8");
+};
 
 
 dotenv.config();
@@ -32,39 +50,68 @@ router.post("/webhook-test", express.json(), async (req, res) => {
 
     console.log("✅ [TEST] Payment success for:", email);
 
+    // 0️⃣ Save booking to bookings.json
+    const bookings = loadBookings();
+
+    const exists = bookings.some(
+      (b) => b.date === metadata?.date && b.time === metadata?.time
+    );
+
+    if (!exists) {
+      const newBooking: Booking = {
+        name: metadata?.name || "Unknown",
+        surname: metadata?.surname || "",
+        email: email || "unknown@example.com",
+        phone: metadata?.number,
+        date: metadata?.date || "",
+        time: metadata?.time || "",
+        session: metadata?.session || "",
+      };
+
+      bookings.push(newBooking);
+      saveBookings(bookings);
+      console.log("✅ Booking saved to bookings.json");
+    } else {
+      console.log("⚠ Slot already exists, skipping JSON update");
+    }
+
     // 1️⃣ Send confirmation to user
-    await sendEmail({
-      to_email: email,
-      subject: "[TEST] Zen Healing – Payment Confirmation",
-      message: `Hi ${metadata?.name || "Test User"},
-
-Thank you for booking your ${metadata?.session || "session"}! 🎉  
-
-📅 Date: ${metadata?.date || "N/A"}  
-⏰ Time: ${metadata?.time || "N/A"}  
-☎ Phone: ${metadata?.number || "N/A"}  
-
-– Zen Healing Team`,
-    });
+    await sendEmail(
+      {
+        to_email: email,
+        name: metadata?.name,
+        number: metadata?.number,
+        date: metadata?.date,
+        time: metadata?.time,
+        session: metadata?.session,
+        subject: "Zen Healing – Booking Confirmation",
+        cancel_url: `${process.env.CLIENT_URL}/cancel-booking`, 
+      },
+      "user"
+    );
 
     // 2️⃣ Send notification to admin
-    await sendEmail({
-      to_email: "info@zenhealing.co.uk",
-      subject: "[TEST] New Booking Received",
-      message: `New booking received:  
-👤 Name: ${metadata?.name} ${metadata?.surname}  
-📧 Email: ${email}  
-☎ Phone: ${metadata?.number || "N/A"}  
-📅 Date: ${metadata?.date}  
-⏰ Time: ${metadata?.time}  
-💳 Session: ${metadata?.session}`,
-    });
+    await sendEmail(
+      {
+        to_email: "info@zenhealing.co.uk",
+        name: metadata?.name,
+        surname: metadata?.surname,
+        email: email,
+        number: metadata?.number,
+        date: metadata?.date,
+        time: metadata?.time,
+        session: metadata?.session,
+        subject: "Zen Healing – New Booking Received",
+      },
+      "admin"
+    );
 
     console.log("✅ Emails sent to user and admin");
   }
 
   res.json({ received: true });
 });
+
 
 
 
@@ -134,45 +181,68 @@ router.post(
     // Handle checkout.session.completed
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
-
       const email = session.customer_email; // ✅ corrected
       const metadata = session.metadata;
 
       console.log("✅ Payment success for:", email);
 
+      // 1️⃣ Save booking in bookings.json
+      const bookings = loadBookings();
+
+      // Prevent duplicate slot booking just in case
+      const exists = bookings.some(
+        (b) => b.date === metadata?.date && b.time === metadata?.time
+      );
+
+      if (!exists) {
+        const newBooking: Booking = {
+          name: metadata?.name || "Unknown",
+          surname: metadata?.surname || "",
+          email: email || "unknown@example.com",
+          phone: metadata?.number,
+          date: metadata?.date || "",
+          time: metadata?.time || "",
+          session: metadata?.session || "",
+        };
+
+        bookings.push(newBooking);
+        saveBookings(bookings);
+        console.log("✅ Booking saved to bookings.json");
+      } else {
+        console.log("⚠ Slot already exists, skipping JSON update");
+      }
+
       // Send confirmation to user
-      await sendEmail({
-        to_email: email,
-        subject: "Zen Healing – Payment Confirmation",
-        message: `Hi ${metadata?.name},
-
-Thank you for booking your ${metadata?.session} with Zen Healing 🎉  
-
-📅 Date: ${metadata?.date}  
-⏰ Time: ${metadata?.time}  
-☎ Phone: ${metadata?.number || "N/A"}  
-
-We look forward to seeing you soon!  
-
-– Zen Healing Team`,
-      });
+      await sendEmail(
+        {
+          to_email: email,
+          name: metadata?.name,
+          number: metadata?.number,
+          date: metadata?.date,
+          time: metadata?.time,
+          session: metadata?.session,
+          subject: "Zen Healing – Booking Confirmation",
+          cancel_url: `${process.env.CLIENT_URL}/cancel-booking`, 
+        },
+        "user"
+      );
 
       // Send notification to admin
-      await sendEmail({
-        to_email: "info@zenhealing.co.uk",
-        subject: "New Paid Booking Received",
-        message: `New booking confirmed:  
-👤 Name: ${metadata?.name} ${metadata?.surname}  
-📧 Email: ${email}  
-☎ Phone: ${metadata?.number || "N/A"}  
-📅 Date: ${metadata?.date}  
-⏰ Time: ${metadata?.time}  
-💳 Session: ${metadata?.session}`,
-      });
+      await sendEmail(
+        {
+          to_email: "info@zenhealing.co.uk",
+          name: metadata?.name,
+          surname: metadata?.surname,
+          email: email,
+          number: metadata?.number,
+          date: metadata?.date,
+          time: metadata?.time,
+          session: metadata?.session,
+          subject: "Zen Healing – New Booking Received",
+        },
+        "admin"
+      );
     }
-
-
-
   })
 
 

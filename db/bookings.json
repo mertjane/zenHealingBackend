@@ -1,0 +1,29 @@
+[
+  {
+    "name": "David",
+    "surname": "Brown",
+    "email": "david@example.com",
+    "phone": "07456789012",
+    "date": "2025-09-27",
+    "time": "14:00",
+    "session": "15-min"
+  },
+  {
+    "name": "Emma",
+    "surname": "Davis",
+    "email": "emma@example.com",
+    "phone": "07567890123",
+    "date": "2025-09-28",
+    "time": "16:30",
+    "session": "30-min"
+  },
+  {
+    "name": "John",
+    "surname": "Doe",
+    "email": "mck0391@gmail.com",
+    "phone": "123456789",
+    "date": "2025-09-28",
+    "time": "14:00",
+    "session": "30-min"
+  }
+]

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Booking Cancelled</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f8f8f8;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        width: 100%;
+        max-width: 600px;
+        margin: auto;
+        background-color: #ffffff;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      }
+      .header {
+        background-color: #5c6a55;
+        color: #ffffff;
+        text-align: center;
+        padding: 20px;
+      }
+      .body {
+        padding: 20px;
+        color: #333333;
+      }
+      .footer {
+        background-color: #eee6da;
+        color: #5c6a55;
+        text-align: center;
+        padding: 15px;
+        font-size: 12px;
+      }
+      .highlight {
+        color: #5c6a55;
+        font-weight: bold;
+      }
+      a.button {
+        display: inline-block;
+        padding: 10px 20px;
+        margin-top: 15px;
+        background-color: #5c6a55;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Zen Healing</h1>
+      </div>
+      <div class="body">
+        <p>Hi {{name}},</p>
+        <p>Your booking for <span class="highlight">{{session}}</span> on <span class="highlight">{{date}}</span> at <span class="highlight">{{time}}</span> has been successfully <strong>cancelled</strong>.</p>
+        <p>Refund policy:</p>
+        <ul>
+          <li>Cancelled more than 24 hours before session: full refund</li>
+          <li>Cancelled within 24 hours: 50% refund</li>
+        </ul>
+        <p>If you want to rebook or manage your sessions, visit:</p>
+        <a class="button" href="https://zenhealing.co.uk/cancel-booking">Manage Booking</a>
+        <p>Thank you for choosing Zen Healing!</p>
+        <p>– Zen Healing Team</p>
+      </div>
+      <div class="footer">
+        &copy; 2025 Zen Healing. All rights reserved.
+      </div>
+    </div>
+  </body>
+</html>
