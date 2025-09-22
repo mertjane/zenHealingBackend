@@ -7,6 +7,8 @@ import { sendEmail } from "../utils/sendEmail";
 const router = Router();
 const filePath = path.join(process.cwd(), "db", "bookings.json");
 
+const cancelUrl = `${process.env.CLIENT_URL}/cancel-booking`;
+
 // Load bookings from file
 const loadBookings = (): Booking[] => {
   if (!fs.existsSync(filePath)) return [];
@@ -78,6 +80,7 @@ router.post("/", async (req: Request, res: Response) => {
         time,
         session,
         subject: `Your Zen Healing Booking Confirmation`,
+        cancel_url: cancelUrl, 
       },
       "user"
     );
