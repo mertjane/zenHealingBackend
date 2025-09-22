@@ -76,11 +76,12 @@ router.post("/", async (req: Request, res: Response) => {
         to_email: email,
         name,
         surname,
+        number: phone || "N/A",   // ✅ add this
         date,
         time,
         session,
         subject: `Your Zen Healing Booking Confirmation`,
-        cancel_url: cancelUrl, 
+        cancel_url: cancelUrl,
       },
       "user"
     );
