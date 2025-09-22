@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import stripeRoutes from "./routes/stripe";
+import bookingsRouter from "./routes/bookings";
 
 dotenv.config();
 
@@ -16,7 +17,7 @@ const allowedOrigins = [
   baseUrl?.replace('https://', 'https://www.'), // www version
   "https://zenhealing.co.uk",
   "https://www.zenhealing.co.uk", 
-  "https://2073dd6e.zenhealingweb.pages.dev"
+  "https://34214acf.zenhealingweb.pages.dev"
 ].filter(Boolean); // Remove any undefined values
 
 // Remove duplicates
@@ -89,6 +90,7 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use("/api/stripe", stripeRoutes);
+app.use("/api/bookings", bookingsRouter);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
