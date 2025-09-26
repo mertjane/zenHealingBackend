@@ -17,7 +17,7 @@ router.get("/", async (req: Request, res: Response) => {
     const params: any[] = [];
 
     if (date) {
-      query += " WHERE date = ?";
+      query += " WHERE date = $1";
       params.push(date);
     }
 
