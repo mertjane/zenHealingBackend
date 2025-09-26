@@ -21,8 +21,8 @@ router.get("/", async (req: Request, res: Response) => {
       params.push(date);
     }
 
-    const [rows] = await pool.query(query, params);
-    res.json(rows);
+    const result = await pool.query(query, params);
+    res.json(result.rows);
   } catch (err: any) {
     console.error("❌ Failed to fetch bookings:", err);
     res.status(500).json({ error: "Failed to fetch bookings" });
@@ -39,12 +39,12 @@ router.post("/", async (req: Request, res: Response) => {
 
   try {
     // Check if slot already booked
-    const [existing] = await pool.query(
-      "SELECT * FROM tBookings WHERE date = ? AND time = ?",
+    const existing = await pool.query(
+      "SELECT * FROM tBookings WHERE date = $1 AND time = $2",
       [date, time]
     );
 
-    if ((existing as any[]).length > 0) {
+    if (existing.rows.length > 0) {
       return res.status(400).json({ error: "Slot already booked" });
     }
 
