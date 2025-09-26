@@ -32,19 +32,16 @@ export async function sendEmail(
 
     // 3️⃣ Create transporter
     const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587, // Use port 587 instead of 465
-      secure: false, // false for port 587
-      requireTLS: true, // Use STARTTLS
+      service: "gmail", // Let nodemailer handle the configuration
       auth: {
         user: process.env.GMAIL_USER,
         pass: process.env.GMAIL_APP_PASS,
       },
-      connectionTimeout: 30000, // 30 seconds
-      socketTimeout: 30000, // 30 seconds
+      connectionTimeout: 60000, // 60 seconds
+      socketTimeout: 60000, // 60 seconds
+      // Let nodemailer choose the best connection method
       tls: {
-        rejectUnauthorized: false, // Allow self-signed certificates
-        ciphers: 'SSLv3'
+        rejectUnauthorized: false
       }
     });
 
@@ -91,19 +88,16 @@ export async function sendCancelEmail(
     });
 
     const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false,
-      requireTLS: true,
+      service: "gmail", // Let nodemailer handle the configuration
       auth: {
         user: process.env.GMAIL_USER,
         pass: process.env.GMAIL_APP_PASS,
       },
-      connectionTimeout: 30000,
-      socketTimeout: 30000,
+      connectionTimeout: 60000, // 60 seconds
+      socketTimeout: 60000, // 60 seconds
+      // Let nodemailer choose the best connection method
       tls: {
-        rejectUnauthorized: false,
-        ciphers: 'SSLv3'
+        rejectUnauthorized: false
       }
     });
 
