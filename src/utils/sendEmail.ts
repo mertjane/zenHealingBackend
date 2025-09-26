@@ -32,18 +32,24 @@ export async function sendEmail(
 
     // 3️⃣ Create transporter
     const transporter = nodemailer.createTransport({
-      service: "gmail",
-      host: "smtp.gmail.com", 
-      port: 465,
+      host: "smtp.gmail.com",
+      port: 587, // Use port 587 instead of 465
+      secure: false, // false for port 587
+      requireTLS: true, // Use STARTTLS
       auth: {
         user: process.env.GMAIL_USER,
         pass: process.env.GMAIL_APP_PASS,
       },
-      secure: true,
+      connectionTimeout: 30000, // 30 seconds
+      socketTimeout: 30000, // 30 seconds
       tls: {
-        rejectUnauthorized: false,
+        rejectUnauthorized: false, // Allow self-signed certificates
+        ciphers: 'SSLv3'
       }
     });
+
+    // Verify connection first
+    await transporter.verify()
 
     // 4️⃣ Send email
     await transporter.sendMail({
@@ -85,18 +91,23 @@ export async function sendCancelEmail(
     });
 
     const transporter = nodemailer.createTransport({
-      service: "gmail",
-      host: "smtp.gmail.com", 
-      port: 465,
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      requireTLS: true,
       auth: {
         user: process.env.GMAIL_USER,
         pass: process.env.GMAIL_APP_PASS,
       },
-      secure: true,
+      connectionTimeout: 30000,
+      socketTimeout: 30000,
       tls: {
         rejectUnauthorized: false,
+        ciphers: 'SSLv3'
       }
     });
+
+    await transporter.verify();
 
     await transporter.sendMail({
       from: `"Zen Healing" <${process.env.GMAIL_USER}>`,
