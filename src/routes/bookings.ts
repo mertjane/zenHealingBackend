@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { pool } from "../utils/db";
 import { Booking } from "../types/Booking";
 import { sendEmail } from "../utils/sendEmail";
+const { v4: uuidv4 } = require('uuid'); 
 
 const router = Router();
 
@@ -46,8 +47,6 @@ router.post("/", async (req: Request, res: Response) => {
     if (existing.rows.length > 0) {
       return res.status(400).json({ error: "Slot already booked" });
     }
-
-    const { v4: uuidv4 } = await import("uuid");
 
     const id = uuidv4();
 
