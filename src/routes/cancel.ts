@@ -1,167 +1,73 @@
 import { Router, Request, Response } from "express";
-import fs from "fs";
-import path from "path";
 import dotenv from "dotenv";
 import { sendCancelEmail } from "../utils/sendEmail";
-import { Booking } from "../types/Booking";
+import { pool } from "../utils/db";
 
 dotenv.config();
 
 const router = Router();
-const filePath = path.join(process.cwd(), "db", "bookings.json");
 
-// Load bookings
-const loadBookings = (): Booking[] => {
-  if (!fs.existsSync(filePath)) return [];
-  const data = fs.readFileSync(filePath, "utf-8");
-  return data ? JSON.parse(data) : [];
-};
 
-// Save bookings
-const saveBookings = (bookings: Booking[]) => {
-  fs.writeFileSync(filePath, JSON.stringify(bookings, null, 2), "utf-8");
-};
 
 // GET booking by email
-router.get("/", (req: Request, res: Response) => {
+router.get("/", async (req: Request, res: Response) => {
   const { email } = req.query as { email?: string };
+  if (!email) return res.status(400).json({ error: "Email query is required" });
 
-  if (!email) {
-    return res.status(400).json({ error: "Email query is required" });
-  }
-
-  const bookings = loadBookings();
-  const userBooking = bookings.find((b) => b.email === email);
-
-  if (!userBooking) {
+  const [rows] = await pool.query("SELECT * FROM tBookings WHERE email = ?", [email]);
+  if ((rows as any[]).length === 0) {
     return res.status(404).json({ error: "No booking found for this email" });
   }
 
-  res.json(userBooking);
+  res.json((rows as any[])[0]);
 });
+
 
 // DELETE booking by email
 router.delete("/", async (req: Request, res: Response) => {
   const { email } = req.body as { email?: string };
+  if (!email) return res.status(400).json({ error: "Email is required" });
 
-  if (!email) {
-    return res.status(400).json({ error: "Email is required" });
-  }
-
-  const bookings = loadBookings();
-  const bookingIndex = bookings.findIndex((b) => b.email === email);
-
-  if (bookingIndex === -1) {
+  const [rows] = await pool.query("SELECT * FROM tBookings WHERE email = ?", [email]);
+  if ((rows as any[]).length === 0) {
     return res.status(404).json({ error: "No booking found for this email" });
   }
 
-  const [removedBooking] = bookings.splice(bookingIndex, 1);
-  saveBookings(bookings);
+  const booking = (rows as any[])[0];
 
-  // Send cancellation email to user
+  await pool.query("DELETE FROM tBookings WHERE email = ?", [email]);
+
+  // Send cancellation emails
   try {
     await sendCancelEmail(
       {
-        to_email: removedBooking.email,
-        name: removedBooking.name,
-        session: removedBooking.session,
-        date: removedBooking.date,
-        time: removedBooking.time,
+        to_email: booking.email,
+        name: booking.fName,
+        session: booking.session,
+        date: booking.date,
+        time: booking.time,
         subject: "Zen Healing – Booking Cancelled",
       },
       "user"
     );
-    console.log("✅ Cancellation email sent to user");
-  } catch (err) {
-    console.error("❌ Failed to send cancellation email", err);
-  }
-
-  // Optionally, notify admin
-  try {
     await sendCancelEmail(
       {
         to_email: "info@zenhealing.co.uk",
-        name: removedBooking.name,
-        surname: removedBooking.surname,
-        email: removedBooking.email,
-        session: removedBooking.session,
-        date: removedBooking.date,
-        time: removedBooking.time,
+        name: booking.fName,
+        surname: booking.sName,
+        email: booking.email,
+        session: booking.session,
+        date: booking.date,
+        time: booking.time,
         subject: "Zen Healing – Booking Cancelled",
       },
       "admin"
     );
-    console.log("✅ Admin notified of cancellation");
   } catch (err) {
-    console.error("❌ Failed to notify admin", err);
+    console.error("❌ Failed to send cancellation emails", err);
   }
 
-  res.json({ success: true, message: "Booking cancelled and emails sent", booking: removedBooking });
+  res.json({ success: true, message: "Booking cancelled", booking });
 });
-
-
-// Temporary POST endpoint for testing cancellation via Postman
-router.post("/test-cancel", async (req: Request, res: Response) => {
-  const { email } = req.body as { email?: string };
-
-  if (!email) {
-    return res.status(400).json({ error: "Email is required" });
-  }
-
-  const bookings = loadBookings();
-  const bookingIndex = bookings.findIndex((b) => b.email === email);
-
-  if (bookingIndex === -1) {
-    return res.status(404).json({ error: "No booking found for this email" });
-  }
-
-  const [removedBooking] = bookings.splice(bookingIndex, 1);
-  saveBookings(bookings);
-
-  // Send cancellation email to user
-  try {
-    await sendCancelEmail(
-      {
-        to_email: removedBooking.email,
-        name: removedBooking.name,
-        session: removedBooking.session,
-        date: removedBooking.date,
-        time: removedBooking.time,
-        subject: "Zen Healing – Booking Cancelled (Test)",
-      },
-      "user"
-    );
-    console.log("✅ Test cancellation email sent to user");
-  } catch (err) {
-    console.error("❌ Failed to send test cancellation email", err);
-  }
-
-  // Notify admin
-  try {
-    await sendCancelEmail(
-      {
-        to_email: "info@zenhealing.co.uk",
-        name: removedBooking.name,
-        surname: removedBooking.surname,
-        email: removedBooking.email,
-        session: removedBooking.session,
-        date: removedBooking.date,
-        time: removedBooking.time,
-        subject: "Zen Healing – Booking Cancelled (Test)",
-      },
-      "admin"
-    );
-    console.log("✅ Admin notified of test cancellation");
-  } catch (err) {
-    console.error("❌ Failed to notify admin", err);
-  }
-
-  res.json({
-    success: true,
-    message: "Test cancellation executed. Emails sent to user and admin.",
-    booking: removedBooking,
-  });
-});
-
 
 export default router;

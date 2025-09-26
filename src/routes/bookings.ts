@@ -1,36 +1,32 @@
 import { Router, Request, Response } from "express";
-import fs from "fs";
-import path from "path";
+import { v4 as uuidv4 } from "uuid";
+import { pool } from "../utils/db";
 import { Booking } from "../types/Booking";
 import { sendEmail } from "../utils/sendEmail";
 
 const router = Router();
-const filePath = path.join(process.cwd(), "db", "bookings.json");
 
 const cancelUrl = `${process.env.CLIENT_URL}/cancel-booking`;
 
-// Load bookings from file
-const loadBookings = (): Booking[] => {
-  if (!fs.existsSync(filePath)) return [];
-  const data = fs.readFileSync(filePath, "utf8");
-  return data ? JSON.parse(data) : [];
-};
-
-// Save bookings to file
-const saveBookings = (bookings: Booking[]) => {
-  fs.writeFileSync(filePath, JSON.stringify(bookings, null, 2), "utf8");
-};
-
-// ✅ GET all bookings
-router.get("/", (req: Request, res: Response) => {
+// ✅ GET all bookings (optionally by date)
+router.get("/", async (req: Request, res: Response) => {
   const { date } = req.query as { date?: string };
-  let bookings = loadBookings();
 
-  if (date) {
-    bookings = bookings.filter((b) => b.date === date);
+  try {
+    let query = "SELECT * FROM tBookings";
+    const params: any[] = [];
+
+    if (date) {
+      query += " WHERE date = ?";
+      params.push(date);
+    }
+
+    const [rows] = await pool.query(query, params);
+    res.json(rows);
+  } catch (err: any) {
+    console.error("❌ Failed to fetch bookings:", err);
+    res.status(500).json({ error: "Failed to fetch bookings" });
   }
-
-  res.json(bookings);
 });
 
 // ✅ POST new booking
@@ -41,55 +37,78 @@ router.post("/", async (req: Request, res: Response) => {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  const bookings = loadBookings();
-
-  const exists = bookings.some((b) => b.date === date && b.time === time);
-  if (exists) {
-    return res.status(400).json({ error: "Slot already booked" });
-  }
-
-  const newBooking: Booking = { name, surname, email, phone, date, time, session };
-  bookings.push(newBooking);
-  saveBookings(bookings);
-
-  // Send emails asynchronously
   try {
-    // Admin email
-    await sendEmail(
-      {
-        to_email: "info@zenhealing.co.uk",
-        name,
-        surname,
-        email,
-        phone: phone || "N/A",
-        date,
-        time,
-        session,
-        subject: `New booking: ${name} ${surname}`,
-      },
-      "admin"
+    // Check if slot already booked
+    const [existing] = await pool.query(
+      "SELECT * FROM tBookings WHERE date = ? AND time = ?",
+      [date, time]
     );
 
-    // User email
-    await sendEmail(
-      {
-        to_email: email,
-        name,
-        surname,
-        number: phone || "N/A",   // ✅ add this
-        date,
-        time,
-        session,
-        subject: `Your Zen Healing Booking Confirmation`,
-        cancel_url: cancelUrl,
-      },
-      "user"
+    if ((existing as any[]).length > 0) {
+      return res.status(400).json({ error: "Slot already booked" });
+    }
+
+    const id = uuidv4();
+
+    const newBooking: Booking = {
+      id,
+      name,
+      surname,
+      email,
+      phone,
+      date,
+      time,
+      session,
+      cancel_url: cancelUrl,
+    };
+
+    await pool.query(
+      "INSERT INTO tBookings (id, fName, sName, email, phone, date, time, session, cancel_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      [id, name, surname, email, phone, date, time, session, cancelUrl]
     );
-  } catch (err) {
-    console.error("Email sending failed:", err);
+
+    // Send confirmation emails (non-blocking)
+    try {
+      // Admin email
+      await sendEmail(
+        {
+          to_email: "info@zenhealing.co.uk",
+          name,
+          surname,
+          email,
+          phone: phone || "N/A",
+          date,
+          time,
+          session,
+          subject: `New booking: ${name} ${surname}`,
+        },
+        "admin"
+      );
+
+      // User email
+      await sendEmail(
+        {
+          to_email: email,
+          name,
+          surname,
+          phone: phone || "N/A",
+          date,
+          time,
+          session,
+          subject: `Your Zen Healing Booking Confirmation`,
+          cancel_url: cancelUrl,
+        },
+        "user"
+      );
+    } catch (emailErr) {
+      console.error("⚠️ Email sending failed:", emailErr);
+    }
+
+    return res.json({ success: true, message: "Booking confirmed", booking: newBooking });
+  } catch (err: any) {
+    console.error("❌ Failed to save booking:", err);
+    res.status(500).json({ error: "Failed to save booking" });
   }
-
-  return res.json({ success: true, message: "Booking confirmed", booking: newBooking });
 });
 
 export default router;
