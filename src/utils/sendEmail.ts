@@ -33,12 +33,12 @@ export async function sendEmail(
     // 3️⃣ Create transporter
     const transporter = nodemailer.createTransport({
       service: "smtp.gmail.com",
-      port: 465,
+      port: 587,
       auth: {
         user: process.env.GMAIL_USER,
         pass: process.env.GMAIL_APP_PASS,
       },
-      secure: true,
+      secure: false,
       tls: {
         rejectUnauthorized: false,
       }
@@ -85,12 +85,12 @@ export async function sendCancelEmail(
 
     const transporter = nodemailer.createTransport({
       service: "smtp.gmail.com",
-      port: 465,
+      port: 587,
       auth: {
         user: process.env.GMAIL_USER,
         pass: process.env.GMAIL_APP_PASS,
       },
-      secure: true,
+      secure: false,
       tls: {
         rejectUnauthorized: false,
       }
