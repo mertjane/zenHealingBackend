@@ -1,5 +1,4 @@
 import { Router, Request, Response } from "express";
-
 import { pool } from "../utils/db";
 import { Booking } from "../types/Booking";
 import { sendEmail } from "../utils/sendEmail";
