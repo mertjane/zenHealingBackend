@@ -21,82 +21,6 @@ const sessionPrices: Record<string, { name: string; amount: number }> = {
 };
 
 
-// --- Temporary POST endpoint for testing in Postman ---
-/* router.post("/webhook-test", express.json(), async (req, res) => {
-  const event = req.body;
-
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object;
-    const metadata = session.metadata;
-
-    const email = metadata?.email || "test@example.com"; // ✅ declare here
-
-    console.log("✅ [TEST] Payment success for:", email);
-
-    // 0️⃣ Save booking to bookings.json
-    const bookings = loadBookings();
-
-    const exists = bookings.some(
-      (b) => b.date === metadata?.date && b.time === metadata?.time
-    );
-
-    if (!exists) {
-      const newBooking: Booking = {
-        name: metadata?.name || "Unknown",
-        surname: metadata?.surname || "",
-        email: email || "unknown@example.com",
-        phone: metadata?.number,
-        date: metadata?.date || "",
-        time: metadata?.time || "",
-        session: metadata?.session || "",
-      };
-
-      bookings.push(newBooking);
-      saveBookings(bookings);
-      console.log("✅ Booking saved to bookings.json");
-    } else {
-      console.log("⚠ Slot already exists, skipping JSON update");
-    }
-
-    // 1️⃣ Send confirmation to user
-    await sendEmail(
-      {
-        to_email: email,
-        name: metadata?.name,
-        number: metadata?.number,
-        date: metadata?.date,
-        time: metadata?.time,
-        session: metadata?.session,
-        subject: "Zen Healing – Booking Confirmation",
-        cancel_url: `${process.env.CLIENT_URL}/cancel-booking`, 
-      },
-      "user"
-    );
-
-    // 2️⃣ Send notification to admin
-    await sendEmail(
-      {
-        to_email: "info@zenhealing.co.uk",
-        name: metadata?.name,
-        surname: metadata?.surname,
-        email: email,
-        number: metadata?.number,
-        date: metadata?.date,
-        time: metadata?.time,
-        session: metadata?.session,
-        subject: "Zen Healing – New Booking Received",
-      },
-      "admin"
-    );
-
-    console.log("✅ Emails sent to user and admin");
-  }
-
-  res.json({ received: true });
-}); */
-
-
-
 
 // Create checkout session
 router.post("/create-checkout-session", async (req, res) => {
@@ -125,14 +49,14 @@ router.post("/create-checkout-session", async (req, res) => {
       ],
       mode: "payment",
       customer_email: email,
-      metadata: { name, surname, number, date, time, session },
+      metadata: { name, surname, phone: number, date, time, session },
       success_url: `${process.env.CLIENT_URL}/success`,
       cancel_url: `${process.env.CLIENT_URL}/cancel`,
     });
 
     res.json({ id: checkoutSession.id });
   } catch (err: any) {
-    console.error(err);
+    console.error("❌ Error creating checkout session:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -154,68 +78,79 @@ router.post(
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
+    console.log("✅ Stripe event received:", event.id, event.type);
+
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
       const email = session.customer_email || "unknown@example.com";
       const metadata = session.metadata || {};
 
-      console.log("✅ Payment success for:", email);
-
-      // Save booking to MariaDB (prevent duplicate slot)
-      const [rows] = await pool.query(
-        "SELECT id FROM tBookings WHERE date = ? AND time = ?",
-        [metadata.date, metadata.time]
-      );
-
-      if ((rows as any[]).length === 0) {
-        await pool.query(
-          `INSERT INTO tBookings (fName, sName, email, phone, date, time, session, cancel_url)
-           VALUES (?, ?, ?, ?, ?, ?, ?, NULL)`,
-          [
-            metadata.name || "Unknown",
-            metadata.surname || "",
-            email,
-            metadata.number || "",
-            metadata.date,
-            metadata.time,
-            metadata.session,
-          ]
-        );
-
-        console.log("✅ Booking saved to MariaDB");
-      } else {
-        console.log("⚠ Slot already exists, skipping DB insert");
+      // Validate required metadata
+      if (!metadata.date || !metadata.time || !metadata.name || !metadata.session) {
+        console.warn("⚠ Missing metadata in Stripe webhook, skipping DB insert");
+        return res.status(400).send("Missing booking metadata");
       }
 
-      // Send emails
-      await sendEmail(
-        {
-          to_email: email,
-          name: metadata.name,
-          number: metadata.number,
-          date: metadata.date,
-          time: metadata.time,
-          session: metadata.session,
-          subject: "Zen Healing – Booking Confirmation",
-          cancel_url: `${process.env.CLIENT_URL}/cancel-booking`,
-        },
-        "user"
-      );
+      try {
+        // Check for existing slot
+        const result = await pool.query(
+          "SELECT id FROM tBookings WHERE date = ? AND time = ?",
+          [metadata.date, metadata.time]
+        );
 
-      await sendEmail(
-        {
-          to_email: "info@zenhealing.co.uk",
-          name: metadata.name,
-          surname: metadata.surname,
-          email: email,
-          number: metadata.number,
-          date: metadata.date,
-          time: metadata.time,
-          session: metadata.session,
-          subject: "Zen Healing – New Booking Received",
-        },
-        "admin"
-      );
+        if ((result as any).length === 0) {
+          await pool.query(
+            `INSERT INTO tBookings (fName, sName, email, phone, date, time, session, cancel_url)
+             VALUES (?, ?, ?, ?, ?, ?, ?, NULL)`,
+            [
+              metadata.name,
+              metadata.surname || "",
+              email,
+              metadata.phone || "",
+              metadata.date,
+              metadata.time,
+              metadata.session,
+            ]
+          );
+          console.log("✅ Booking saved to MariaDB");
+        } else {
+          console.log("⚠ Slot already exists, skipping DB insert");
+        }
+
+        // Send emails in parallel
+        await Promise.all([
+          sendEmail(
+            {
+              to_email: email,
+              name: metadata.name,
+              number: metadata.phone,
+              date: metadata.date,
+              time: metadata.time,
+              session: metadata.session,
+              subject: "Zen Healing – Booking Confirmation",
+              cancel_url: `${process.env.CLIENT_URL}/cancel-booking`,
+            },
+            "user"
+          ),
+          sendEmail(
+            {
+              to_email: "info@zenhealing.co.uk",
+              name: metadata.name,
+              surname: metadata.surname,
+              email: email,
+              number: metadata.phone,
+              date: metadata.date,
+              time: metadata.time,
+              session: metadata.session,
+              subject: "Zen Healing – New Booking Received",
+            },
+            "admin"
+          ),
+        ]);
+      } catch (dbErr: any) {
+        console.error("❌ Error saving booking or sending emails:", dbErr);
+        return res.status(500).send("Internal server error");
+      }
     }
 
     res.json({ received: true });
