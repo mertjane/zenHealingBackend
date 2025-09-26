@@ -1,50 +1,28 @@
 // utils/db.ts
 import { Pool } from 'pg';
-import dotenv from "dotenv";
-
+import dotenv from 'dotenv';
 dotenv.config();
 
-// Database configuration
-const dbConfig = {
+export const pool = new Pool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   port: parseInt(process.env.DB_PORT || "5432"),
-  ssl: process.env.NODE_ENV === 'production' ? {
-    rejectUnauthorized: false, // required for Render
-  } : undefined,
-  // pg does not support acquireTimeout/timeout/reconnect
-  connectionTimeoutMillis: 60000, // equivalent of connectTimeout
-};
-
-console.log("🔗 Database config:", {
-  host: dbConfig.host,
-  user: dbConfig.user,
-  database: dbConfig.database,
-  port: dbConfig.port,
-  ssl: !!dbConfig.ssl
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+  connectionTimeoutMillis: 60000,
 });
 
-// Create a Postgres connection pool
-export const pool = new Pool(dbConfig);
-
-// Test database connection
-async function testConnection() {
+export async function testConnection() {
   try {
     const client = await pool.connect();
-    console.log("✅ Database connected successfully");
-
-    // Test with a simple query
+    console.log("✅ PostgreSQL connected");
     const result = await client.query("SELECT 1 as test");
-    console.log("✅ Database query test successful:", result.rows);
-
+    console.log("✅ Query result:", result.rows);
     client.release();
-  } catch (error) {
-    console.error("❌ Database connection failed:", error);
-    console.error("Check your database credentials and ensure the database is accessible");
+  } catch (err) {
+    console.error("❌ DB connection failed:", err);
   }
 }
 
-// Call test connection on startup
 testConnection();

@@ -101,7 +101,7 @@ router.post(
         if ((result as any).length === 0) {
           await pool.query(
             `INSERT INTO tBookings (fName, sName, email, phone, date, time, session, cancel_url)
-             VALUES (?, ?, ?, ?, ?, ?, ?, NULL)`,
+             VALUES ($1,$2,$3,$4,$5,$6,$7)`,
             [
               metadata.name,
               metadata.surname || "",
