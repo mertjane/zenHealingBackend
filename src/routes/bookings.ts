@@ -63,9 +63,9 @@ router.post("/", async (req: Request, res: Response) => {
     };
 
     await pool.query(
-      `INSERT INTO tBookings (id, fName, sName, email, phone, date, time, session)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-      [id, name, surname, email, phone, date, time, session]
+      `INSERT INTO tBookings (id, fName, sName, email, phone, date, time, session, cancel_url)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+      [id, name, surname, email, phone, date, time, session, cancelUrl]
     );
 
     // Send confirmation emails (non-blocking)
