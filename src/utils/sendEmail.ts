@@ -60,6 +60,7 @@ export async function sendEmail(
 }
 
 
+
 /**
  * Send booking cancellation emails (user/admin) via SMTP2GO API
  */
@@ -88,7 +89,7 @@ export async function sendCancelEmail(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        api_key: process.env.SMTP2GO_API_KEY, // your SMTP2GO API key from Render secrets
+        api_key: process.env.GMAIL_APP_PASS, // your SMTP2GO API key from Render secrets
         to: [variables.to_email],
         sender: process.env.GMAIL_USER,
         subject: variables.subject || "Booking Cancelled",
