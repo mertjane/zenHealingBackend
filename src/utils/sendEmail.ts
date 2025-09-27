@@ -30,35 +30,29 @@ export async function sendEmail(
       html = html.replace(regex, variables[key] ?? "");
     });
 
-    // 3️⃣ Create transporter
-    const transporter = nodemailer.createTransport({
-      host: "mail.smtp2go.com", // Let nodemailer handle the configuration
-      port: 587, // TLS
-      secure: false, // STARTTLS (587)
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASS,
-      },
-      connectionTimeout: 60000,
-      socketTimeout: 60000,
-      tls: {
-        rejectUnauthorized: false,
-      },
+    // 3️⃣ Send email via SMTP2GO API
+    const response = await fetch("https://api.smtp2go.com/v3/email/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        api_key: process.env.GMAIL_APP_PASS, // put your API key in Render secrets
+        to: [variables.to_email],
+        sender: process.env.GMAIL_USER,
+        subject: variables.subject || "Booking Notification",
+        html_body: html,
+        text_body: variables.text_body || "",
+      }),
     });
 
-    // Verify connection first
-    await transporter.verify()
+    const data = await response.json();
 
-    // 4️⃣ Send email
-    await transporter.sendMail({
-      from: `"Zen Healing" <${process.env.GMAIL_USER}>`,
-      to: variables.to_email,
-      subject: variables.subject || "Booking Notification",
-      html,
-    });
-
-    console.log(`✅ Email sent via Nodemailer (${template})`);
-    return true;
+    if (data.success) {
+      console.log(`✅ Email sent via SMTP2GO API (${template})`);
+      return true;
+    } else {
+      console.error("❌ SMTP2GO API error:", data);
+      return false;
+    }
   } catch (err) {
     console.error("❌ Email sending failed", err);
     return false;
@@ -66,15 +60,15 @@ export async function sendEmail(
 }
 
 
-
 /**
- * Send booking cancellation emails (user/admin) separately
+ * Send booking cancellation emails (user/admin) via SMTP2GO API
  */
 export async function sendCancelEmail(
   variables: Record<string, any>,
   template: "user" | "admin" = "user"
 ) {
   try {
+    // 1️⃣ Choose template
     const templateFile =
       template === "user"
         ? "booking-cancel-temp-user.html"
@@ -83,37 +77,35 @@ export async function sendCancelEmail(
     const templatePath = path.join(process.cwd(), "src/templates", templateFile);
     let html = fs.readFileSync(templatePath, "utf-8");
 
+    // 2️⃣ Replace placeholders
     Object.keys(variables).forEach((key) => {
       const regex = new RegExp(`{{${key}}}`, "g");
       html = html.replace(regex, variables[key] ?? "");
     });
 
-    const transporter = nodemailer.createTransport({
-      host: "mail.smtp2go.com", // Let nodemailer handle the configuration
-      port: 587, // TLS
-      secure: false, // STARTTLS (587)
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASS,
-      },
-      connectionTimeout: 60000,
-      socketTimeout: 60000,
-      tls: {
-        rejectUnauthorized: false,
-      },
+    // 3️⃣ Send email via SMTP2GO API
+    const response = await fetch("https://api.smtp2go.com/v3/email/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        api_key: process.env.SMTP2GO_API_KEY, // your SMTP2GO API key from Render secrets
+        to: [variables.to_email],
+        sender: process.env.GMAIL_USER,
+        subject: variables.subject || "Booking Cancelled",
+        html_body: html,
+        text_body: variables.text_body || "",
+      }),
     });
 
-    await transporter.verify();
+    const data = await response.json();
 
-    await transporter.sendMail({
-      from: `"Zen Healing" <${process.env.GMAIL_USER}>`,
-      to: variables.to_email,
-      subject: variables.subject || "Booking Cancelled",
-      html,
-    });
-
-    console.log(`✅ Cancellation email sent (${template})`);
-    return true;
+    if (data.success) {
+      console.log(`✅ Cancellation email sent via SMTP2GO API (${template})`);
+      return true;
+    } else {
+      console.error("❌ SMTP2GO API error:", data);
+      return false;
+    }
   } catch (err) {
     console.error("❌ Cancellation email sending failed", err);
     return false;
