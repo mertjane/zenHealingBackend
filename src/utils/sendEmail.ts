@@ -32,17 +32,18 @@ export async function sendEmail(
 
     // 3️⃣ Create transporter
     const transporter = nodemailer.createTransport({
-      service: "gmail", // Let nodemailer handle the configuration
+      host: "mail.smtp2go.com", // Let nodemailer handle the configuration
+      port: 587, // TLS
+      secure: false, // STARTTLS (587)
       auth: {
         user: process.env.GMAIL_USER,
         pass: process.env.GMAIL_APP_PASS,
       },
-      connectionTimeout: 60000, // 60 seconds
-      socketTimeout: 60000, // 60 seconds
-      // Let nodemailer choose the best connection method
+      connectionTimeout: 60000,
+      socketTimeout: 60000,
       tls: {
-        rejectUnauthorized: false
-      }
+        rejectUnauthorized: false,
+      },
     });
 
     // Verify connection first
@@ -88,17 +89,18 @@ export async function sendCancelEmail(
     });
 
     const transporter = nodemailer.createTransport({
-      service: "gmail", // Let nodemailer handle the configuration
+      host: "mail.smtp2go.com", // Let nodemailer handle the configuration
+      port: 587, // TLS
+      secure: false, // STARTTLS (587)
       auth: {
         user: process.env.GMAIL_USER,
         pass: process.env.GMAIL_APP_PASS,
       },
-      connectionTimeout: 60000, // 60 seconds
-      socketTimeout: 60000, // 60 seconds
-      // Let nodemailer choose the best connection method
+      connectionTimeout: 60000,
+      socketTimeout: 60000,
       tls: {
-        rejectUnauthorized: false
-      }
+        rejectUnauthorized: false,
+      },
     });
 
     await transporter.verify();
