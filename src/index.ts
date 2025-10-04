@@ -16,7 +16,7 @@ const allowedOrigins = [
   "https://www.zen-healing.co.uk",
   "https://zenhealing.co.uk", 
   "https://www.zenhealing.co.uk",
-  "https://a04f4dd2.zenhealingweb.pages.dev"
+  "https://95ee3ff0.zenhealingweb.pages.dev"
 ];
 
 // For development

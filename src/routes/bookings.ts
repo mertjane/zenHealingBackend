@@ -68,41 +68,43 @@ router.post("/", async (req: Request, res: Response) => {
       [id, name, surname, email, phone, date, time, session, cancelUrl]
     );
 
-    // Send confirmation emails (non-blocking)
-    try {
-      // Admin email
-      await sendEmail(
-        {
-          to_email: "info@zenhealing.co.uk",
-          name,
-          surname,
-          email,
-          phone: phone || "N/A",
-          date,
-          time,
-          session,
-          subject: `New booking: ${name} ${surname}`,
-        },
-        "admin"
-      );
+    // Send confirmation emails only for free sessions (15-min)
+    if (session === "15-min") {
+      try {
+        // Admin email
+        await sendEmail(
+          {
+            to_email: "info@zenhealing.co.uk",
+            name,
+            surname,
+            email,
+            phone: phone || "N/A",
+            date,
+            time,
+            session,
+            subject: `New booking: ${name} ${surname}`,
+          },
+          "admin"
+        );
 
-      // User email
-      await sendEmail(
-        {
-          to_email: email,
-          name,
-          surname,
-          phone: phone || "N/A",
-          date,
-          time,
-          session,
-          subject: `Your Zen Healing Booking Confirmation`,
-          cancel_url: cancelUrl,
-        },
-        "user"
-      );
-    } catch (emailErr) {
-      console.error("⚠️ Email sending failed:", emailErr);
+        // User email
+        await sendEmail(
+          {
+            to_email: email,
+            name,
+            surname,
+            phone: phone || "N/A",
+            date,
+            time,
+            session,
+            subject: `Your Zen Healing Booking Confirmation`,
+            cancel_url: cancelUrl,
+          },
+          "user"
+        );
+      } catch (emailErr) {
+        console.error("⚠️ Email sending failed:", emailErr);
+      }
     }
 
     return res.json({ success: true, message: "Booking confirmed", booking: newBooking });
@@ -113,3 +115,6 @@ router.post("/", async (req: Request, res: Response) => {
 });
 
 export default router;
+
+
+
