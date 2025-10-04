@@ -15,7 +15,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 // Booking sessions mapping
 const sessionPrices: Record<string, { name: string; amount: number }> = {
   "15-min": { name: "15 min free consultation", amount: 0 },
-  "30-min": { name: "30 min session", amount: 100 },   // £45 for test I did 1 
+  "30-min": { name: "30 min session", amount: 4500 },   // £45 for 4500, test for 1 
   "45-min": { name: "45 min session", amount: 6750 },   // £67.50
   "60-min": { name: "1 hr session", amount: 9000 },     // £90
 };
