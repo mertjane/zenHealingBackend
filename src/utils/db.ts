@@ -1,4 +1,4 @@
-/* // utils/db.ts
+// utils/db.ts
 import { Pool } from 'pg';
 import dotenv from 'dotenv';
 dotenv.config();
@@ -26,11 +26,11 @@ export async function testConnection() {
 }
 
 testConnection();
- */
+
 
 
 // utils/db.ts
-import { Pool } from 'pg';
+/* import { Pool } from 'pg';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -55,3 +55,4 @@ export async function testConnection() {
 }
 
 testConnection();
+ */
