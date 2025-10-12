@@ -157,6 +157,7 @@ router.post(
               session: metadata.session,
               subject: "Zen Healing – Booking Confirmation",
               cancel_url: `${process.env.CLIENT_URL}/cancel-booking`,
+              logo_url: `${process.env.SERVER_URL}/logoOriginal.png`
             },
             "user"
           ),
@@ -171,6 +172,7 @@ router.post(
               time: metadata.time,
               session: metadata.session,
               subject: "Zen Healing – New Booking Received",
+              logo_url: `${process.env.SERVER_URL}/logoOriginal.png`
             },
             "admin"
           ),
@@ -205,6 +207,7 @@ router.post("/test-email", async (req, res) => {
           session: "30-min",
           subject: "Zen Healing – Booking Confirmation",
           cancel_url: "https://example.com/cancel",
+          logo_url: `${process.env.SERVER_URL}/logoOriginal.png`
         },
         "user"
       ),
@@ -220,6 +223,7 @@ router.post("/test-email", async (req, res) => {
           time: "10:00",
           session: "30-min",
           subject: "Zen Healing – New Booking Received",
+          logo_url: `${process.env.SERVER_URL}/logoOriginal.png`
         },
         "admin"
       ),
@@ -294,6 +298,7 @@ router.post("/trigger-confirmation-email", async (req, res) => {
           session: metadata.session,
           subject: "Zen Healing – Booking Confirmation",
           cancel_url: `${process.env.CLIENT_URL}/cancel-booking`,
+          logo_url: `${process.env.SERVER_URL}/logoOriginal.png`
         },
         "user"
       ),
@@ -308,6 +313,7 @@ router.post("/trigger-confirmation-email", async (req, res) => {
           time: metadata.time,
           session: metadata.session,
           subject: "Zen Healing – New Booking Received",
+          logo_url: `${process.env.SERVER_URL}/logoOriginal.png`
         },
         "admin"
       ),

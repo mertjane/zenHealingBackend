@@ -60,6 +60,7 @@ router.post("/", async (req: Request, res: Response) => {
       time,
       session,
       cancel_url: cancelUrl,
+      
     };
 
     await pool.query(
@@ -83,6 +84,7 @@ router.post("/", async (req: Request, res: Response) => {
             time,
             session,
             subject: `New booking: ${name} ${surname}`,
+            logo_url: `${process.env.SERVER_URL}/logoOriginal.png`
           },
           "admin"
         );
@@ -99,6 +101,7 @@ router.post("/", async (req: Request, res: Response) => {
             session,
             subject: `Your Zen Healing Booking Confirmation`,
             cancel_url: cancelUrl,
+            logo_url: `${process.env.SERVER_URL}/logoOriginal.png`
           },
           "user"
         );
